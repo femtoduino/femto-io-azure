@@ -7,7 +7,7 @@ module.exports = function (context, req) {
                         null;
 
     if (deviceId) {
-        deviceId.replace(/[\W_-]+/g, ''); // remove non-alphanumeric, _, -
+        deviceId.replace(/[^a-zA-Z0-9_-]+/g, ''); // remove non-alphanumeric, _, -
     }
 
     if (deviceId && deviceId.length > 1) { 
