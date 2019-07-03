@@ -23,7 +23,9 @@ module.exports = function (context, req) {
             var deviceSdk = require('azure-iot-device');
             var deviceSas = require('azure-iot-device').SharedAccessSignature;
             var anHourFromNow = require('azure-iot-common').anHourFromNow;
-            var sasTokenDevice = deviceSas.create(iothubHost, deviceKey, sasToken, anHourFromNow()).toString();
+            var tok = deviceSas.create(iothubHost, deviceKey, sasToken, anHourFromNow());
+
+            var sasTokenDevice = "SharedAccessSignature sr=" + tok.sr + "&sig=" + tok.sig + "&se=" + tok.se + "&skn=" & tok.sig; // .toString();
 
             context.res = {
                 "status": 200,
