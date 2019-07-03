@@ -1,0 +1,13 @@
+{
+  "name": "",
+  "version": "",
+  "description": "",
+  "scripts": {
+    "test": "echo \"No tests yet...\""
+  },
+  "author": "",
+  "dependencies": {
+    "azure-iot-device": "^1.9.9",
+    "azure-iothub": "^1.9.9"
+  }
+}
