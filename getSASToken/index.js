@@ -1,8 +1,9 @@
 module.exports = function (context, req) {
 
-
-    var iothub = require('azure-iothub');
-    var crypto = require('crypto');
+    // This "flow" is based on the following article:
+    // https://kvaes.wordpress.com/2017/10/13/azure-iot-hub-generating-using-sas-tokens-for-a-device/
+    var iothub = require('azure-iothub'); // npm install --save azure-iothub
+    var crypto = require('crypto'); // Built-in to Node.
     var connectionString = process.env.iothubconnectionstring;
     var iothubHost = process.env.iothubhostname;
     var iothubdevicekey = process.env.iothubdevicekey;
@@ -17,6 +18,7 @@ module.exports = function (context, req) {
     if (deviceId && deviceId.length > 1) { 
 
         var expiresTimestamp = 0;
+        // The logic follow's Microsoft's IoTHub SAS Token generator sample.
         // See https://stackoverflow.com/a/37383699/700227 and 
         // See https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-security#security-tokens
         var generateSasToken = (resourceUri, signingKey, policyName, expiresInMins) => {
