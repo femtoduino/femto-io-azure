@@ -1,7 +1,11 @@
 module.exports = function (context, req) {
+
+
     var iothub = require('azure-iothub');
+    var crypto = require('crypto');
     var connectionString = process.env.iothubconnectionstring;
     var iothubHost = process.env.iothubhostname;
+    var iothubdevicekey = process.env.iothubdevicekey;
     var deviceId = typeof req.query.deviceid != 'undefined' ? 
                         req.query.deviceid :
                         null;
@@ -11,32 +15,38 @@ module.exports = function (context, req) {
     }
 
     if (deviceId && deviceId.length > 1) { 
-        var registry = iothub.Registry.fromConnectionString(connectionString);
-        registry.get(deviceId, (err, getDevDesc) => {
-            var deviceKey = getDevDesc.authentication.symmetricKey.primaryKey;
-            // HostName=iothubname.azure-devices.net;DeviceId=deviceid;SharedAccessKey=SasKey
-            var sasToken = "HostName=iothubHost;DeviceId=deviceId;SharedAccessKey=deviceKey";
-            var sasToken = sasToken.replace("deviceId", deviceId);
-            var sasToken = sasToken.replace("deviceKey", deviceKey);
-            var sasToken = sasToken.replace("iothubHost", iothubHost);
 
-            var deviceSdk = require('azure-iot-device');
-            var deviceSas = require('azure-iot-device').SharedAccessSignature;
-            var anHourFromNow = require('azure-iot-common').anHourFromNow;
-            var tok = deviceSas.create(iothubHost, deviceKey, sasToken, anHourFromNow());
+        var expiresTimestamp = 0;
+        // See https://stackoverflow.com/a/37383699/700227 and 
+        // See https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-security#security-tokens
+        var generateSasToken = (resourceUri, signingKey, policyName, expiresInMins) => {
+            resourceUri = encodeURIComponent(resourceUri);
+        
+            // Set expiration in seconds
+            var expires = (Date.now() / 1000) + expiresInMins * 60;
+            expires = Math.ceil(expires);
+            var toSign = resourceUri + '\n' + expires;
+            expiresTimestamp = expires;
+        
+            // Use crypto
+            var hmac = crypto.createHmac('sha256', new Buffer(signingKey, 'base64'));
+            hmac.update(toSign);
+            var base64UriEncoded = encodeURIComponent(hmac.digest('base64'));
+        
+            // Construct authorization string
+            var token = "SharedAccessSignature sr=" + resourceUri + "&sig="
+            + base64UriEncoded + "&se=" + expires;
+            if (policyName) token += "&skn="+policyName;
+            return token;
+        };
+        var sasToken = generateSasToken(iothubHost + "/devices/" + deviceId, iothubdevicekey, null, 60);
 
-            // var sasTokenDevice = "SharedAccessSignature sr=Femto-IO.azure-devices.net" + "&sig=" + tok.sig + "&se=" + tok.se + "&skn=" & tok.sig; // .toString();
-            var sasTokenDevice = tok.toString();
-            
-            context.res = {
-                "status": 200,
-                "body": "OK, " + deviceId,
-
-                "headers": {"sastoken": sasTokenDevice, "sasexpires": anHourFromNow()}
-            };
-            context.done();
-        });
-
+        context.res = {
+            "status": 200,
+            "body": "OK",
+            "headers": {"sastoken": sasToken, "sasexpires": expiresTimestamp}
+        };
+        context.done();
     } else {
         context.res = {
             "status": 400,
