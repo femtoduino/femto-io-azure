@@ -4,7 +4,6 @@ module.exports = function (context, req) {
     // https://kvaes.wordpress.com/2017/10/13/azure-iot-hub-generating-using-sas-tokens-for-a-device/
     var iothub = require('azure-iothub'); // npm install --save azure-iothub
     var crypto = require('crypto'); // Built-in to Node.
-    var connectionString = process.env.iothubconnectionstring;
     var iothubHost = process.env.iothubhostname;
     var iothubdevicekey = process.env.iothubdevicekey;
     var deviceId = typeof req.query.deviceid != 'undefined' ? 
